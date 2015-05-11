@@ -32,7 +32,7 @@ RunningStats runningStats;
 bool autoRun = true;
 bool autoRunWithinFrame = true;
 
-int debugDisplay = 0;
+int debugDisplay = 1;
 
 bool onSceenInfoDisplay = true;
 bool displayDepthMap = true;

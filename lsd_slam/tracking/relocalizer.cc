@@ -22,6 +22,7 @@
 #include "model/frame.h"
 #include "tracking/se3_tracker.h"
 #include "io_wrapper/image_display.h"
+#include "util/global_funcs.h"
 
 namespace lsd_slam
 {
@@ -71,6 +72,7 @@ void Relocalizer::stop()
 
 void Relocalizer::updateCurrentFrame(std::shared_ptr<Frame> currentFrame)
 {
+	log("-------------------->>>>>>>>>>>>>>>>>>>>>>>> Relocalizer::updateCurrentFrame --------- START STEP 1 ****************************************", 2);
 	boost::unique_lock<boost::mutex> lock(exMutex);
 
 	if(hasResult) return;
@@ -81,14 +83,24 @@ void Relocalizer::updateCurrentFrame(std::shared_ptr<Frame> currentFrame)
 	newCurrentFrameSignal.notify_all();
 	lock.unlock();
 
+	log("--------------------->>>>>>>>>>>>>>>>>>>>>>>> Relocalizer::updateCurrentFrame --------- STEP 2", 2);
+
 	printf("tried last on %d. set new current frame %d. trying %d to %d!\n",
 			doneLast,
 			currentFrame->id(), nextRelocIDX, maxRelocIDX);
 
-	if (displayDepthMap)
+	log("--------------------->>>>>>>>>>>>>>>>>>>>>>>> Relocalizer::updateCurrentFrame --------- STEP 3", 2);
+
+	if (displayDepthMap) {
+		log("--------------------->>>>>>>>>>>>>>>>>>>>>>>> Relocalizer::updateCurrentFrame --------- STEP 3.1 DISPLAYING DEPTH MAP", 2);
 		Util::displayImage( "DebugWindow DEPTH", cv::Mat(currentFrame->height(), currentFrame->width(), CV_32F, currentFrame->image())*(1/255.0f), false );
+		log("--------------------->>>>>>>>>>>>>>>>>>>>>>>> Relocalizer::updateCurrentFrame --------- STEP 3.2 SHOULD HAVE DISPLAYED DEPTH MAP", 2);
+	}
+
+	log("--------------------->>>>>>>>>>>>>>>>>>>>>>>> Relocalizer::updateCurrentFrame --------- STEP 4", 2);
 
 	int pressedKey = Util::waitKey(1);
+	log("-------------------->>>>>>>>>>>>>>>>>>>>>>>> Relocalizer::updateCurrentFrame --------- STEP 5 ****************************************", 2);
 	handleKey(pressedKey);
 }
 void Relocalizer::start(std::vector<Frame*> &allKeyframesList)

@@ -22,6 +22,7 @@
 #include <vector>
 #include "util/sophus_util.h"
 #include "util/snprintf.h"
+#include "util/global_funcs.h"
 
 #include "slam_system.h"
 
@@ -39,6 +40,7 @@ namespace lsd_slam
 
 LiveSLAMWrapper::LiveSLAMWrapper(InputImageStream* imageStream, Output3DWrapper* outputWrapper)
 {
+	log("LiveSLAMWrapper::LiveSLAMWrapper CONSTRUCTOR ------ START ----------------------------------------------------------------------  BBBBBBBBBBBBBBBBBB", 2);
 	this->imageStream = imageStream;
 	this->outputWrapper = outputWrapper;
 	imageStream->getBuffer()->setReceiver(this);
@@ -51,7 +53,9 @@ LiveSLAMWrapper::LiveSLAMWrapper(InputImageStream* imageStream, Output3DWrapper*
 	height = imageStream->height();
 
 	outFileName = packagePath+"estimated_poses.txt";
-
+	log("LiveSLAMWrapper::LiveSLAMWrapper CONSTRUCTOR ------ ----------------------------------------------------------------------  BBBBBBBBBBBBBBBBBB outFileName", 2);
+	log(outFileName, 2);
+	log("LiveSLAMWrapper::LiveSLAMWrapper CONSTRUCTOR ------ ----------------------------------------------------------------------  BBBBBBBBBBBBBBBBBB outFileName", 2);
 
 	isInitialized = false;
 
@@ -65,9 +69,15 @@ LiveSLAMWrapper::LiveSLAMWrapper(InputImageStream* imageStream, Output3DWrapper*
 	// make Odometry
 	monoOdometry = new SlamSystem(width, height, K_sophus, doSlam);
 
+	log("LiveSLAMWrapper::LiveSLAMWrapper CONSTRUCTOR ------ ----------------------------------------------------------------------  BBBBBBBBBBBBBBBBBB monoOdometry initialized", 2);
+
 	monoOdometry->setVisualization(outputWrapper);
 
+	log("LiveSLAMWrapper::LiveSLAMWrapper CONSTRUCTOR ------ ----------------------------------------------------------------------  BBBBBBBBBBBBBBBBBB monoOdometry setVisualization DONE", 2);
+
 	imageSeqNumber = 0;
+
+	log("LiveSLAMWrapper::LiveSLAMWrapper CONSTRUCTOR ------ END ----------------------------------------------------------------------  BBBBBBBBBBBBBBBBBB", 2);
 }
 
 
@@ -104,13 +114,18 @@ void LiveSLAMWrapper::Loop()
 		TimestampedMat image = imageStream->getBuffer()->first();
 		imageStream->getBuffer()->popFront();
 		
+		log("LiveSLAMWrapper::Loop --- Util.displayImage to MyVideo  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----------", 2);
 		// process image
 		Util::displayImage("MyVideo", image.data);
 		newImageCallback(image.data, image.timestamp);
+
+		log("LiveSLAMWrapper::Loop --- Util.displayImage AFTER newImageCallback  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----------", 2);
+
 		auto key = cvWaitKey(10); //Capture Keyboard stroke
 		if (char(key) == 27){
 			break; //If you hit ESC key loop will break.
 		}
+		log("LiveSLAMWrapper::Loop --- Util.displayImage ENDk  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<----------- *******", 2);
 		
 	}
 }
@@ -118,6 +133,7 @@ void LiveSLAMWrapper::Loop()
 
 void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, Timestamp imgTime)
 {
+	log("debug: =============== LiveSLAMWrapper::newImageCallback ---- START -------------------------- STEP1 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", 2);
 	++ imageSeqNumber;
 
 	// Convert image to grayscale, if necessary
@@ -128,21 +144,33 @@ void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, Timestamp imgTime)
 		cvtColor(img, grayImg, CV_RGB2GRAY);
 	
 
+	log("debug: =============== LiveSLAMWrapper::newImageCallback ---- -------------------------- STEP2 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", 2);
+
 	// Assert that we work with 8 bit images
 	assert(grayImg.elemSize() == 1);
 	assert(fx != 0 || fy != 0);
 
+	log("debug: =============== LiveSLAMWrapper::newImageCallback ---- -------------------------- STEP3 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", 2);
 
 	// need to initialize
 	if(!isInitialized)
 	{
+		log("debug: =============== LiveSLAMWrapper::newImageCallback ---- -------------------------- STEP3 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", 2);
 		monoOdometry->randomInit(grayImg.data, imgTime.toSec(), 1);
+		log("debug: =============== LiveSLAMWrapper::newImageCallback ---- -------------------------- STEP3.1 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", 2);
+
 		isInitialized = true;
 	}
 	else if(isInitialized && monoOdometry != nullptr)
 	{
-		monoOdometry->trackFrame(grayImg.data,imageSeqNumber,false,imgTime.toSec());
+		log("debug: =============== LiveSLAMWrapper::newImageCallback ---- -------------------------- STEP4 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ----------------------------------------------->>>>", 2);
+////RR		monoOdometry->trackFrame(grayImg.data,imageSeqNumber,false,imgTime.toSec());
 	}
+
+//	log("debug: =============== LiveSLAMWrapper::newImageCallback ---- SLEEPING 2 seconds  -------------------------- STEP5 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX SLEEPING SLEEPING", 2);
+//	sleep (2);
+	log("debug: =============== LiveSLAMWrapper::newImageCallback ---- END -------------------------- STEP5 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", 2);
+
 }
 
 void LiveSLAMWrapper::logCameraPose(const SE3& camToWorld, double time)
