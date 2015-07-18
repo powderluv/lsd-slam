@@ -144,7 +144,7 @@ add_subdirectory(lsd_slam)
 list(APPEND LsdSlam_ALL_LIBRARIES lsd_slam)
 lsd_slam_print_status("LsdSlam_ALL_LIBRARIES After:${LsdSlam_ALL_LIBRARIES}")
 # Applications
-add_subdirectory(apps)
+# add_subdirectory(apps)
 
 # Installation =================================================================
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/LsdSlamConfig.cmake.in"

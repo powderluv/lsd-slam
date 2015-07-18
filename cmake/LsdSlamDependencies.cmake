@@ -33,11 +33,11 @@ lsd_slam_print_status("OpenCV libs:${OpenCV_LIBRARIES}")
 find_package(G2O REQUIRED)
 set(G2O_BINARY_DIR ${G2O_ROOT}/bin)
 
-set(G2O_LIBRARIES optimized ${G2O_CORE_LIBRARY} debug ${G2O_CORE_LIBRARY_DEBUG} 
-                  optimized ${G2O_STUFF_LIBRARY} debug ${G2O_STUFF_LIBRARY_DEBUG}
-                  optimized ${G2O_SOLVER_DENSE} debug ${G2O_SOLVER_DENSE_DEBUG}
-                  optimized ${G2O_TYPES_SLAM3D} debug ${G2O_TYPES_SLAM3D_DEBUG}
-                  optimized ${G2O_SIMULATOR} debug ${G2O_SIMULATOR_DEBUG}
+set(G2O_LIBRARIES ${G2O_CORE_LIBRARY}
+                  ${G2O_STUFF_LIBRARY}
+                  ${G2O_SOLVER_DENSE}
+                  ${G2O_TYPES_SLAM3D}
+                  ${G2O_SIMULATOR}
                   )
 if(G2O_SOLVER_CSPARSE AND NOT APPLE)
   if(WIN32)
