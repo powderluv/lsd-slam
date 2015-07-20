@@ -53,6 +53,17 @@
 
 using namespace lsd_slam;
 
+#include <android/log.h>
+#include <sstream>
+static void LOGD(const char* TAG, const char* MSG) {
+          __android_log_write(ANDROID_LOG_DEBUG, TAG, MSG);
+}
+
+static void LOGD(const char* TAG, const std::stringstream& stream) {
+          std::string streamout = stream.str();
+                  LOGD(TAG, streamout.c_str());
+}
+const char* LSD_TAG = "NodCV.jni.LSD";
 
 SlamSystem::SlamSystem(int w, int h, Eigen::Matrix3f K, bool enableSLAM)
 : SLAMEnabled(enableSLAM), relocalizer(w,h,K)
@@ -511,6 +522,10 @@ void SlamSystem::loadNewCurrentKeyframe(Frame* keyframeToLoad)
 
 void SlamSystem::changeKeyframe(bool noCreate, bool force, float maxScore)
 {
+    std::stringstream logd;
+    logd << "changeKeyframe called: " << noCreate << ", " << force << ", " << maxScore <<std::endl;
+    LOGD(LSD_TAG, logd);
+
 	Frame* newReferenceKF=0;
 	std::shared_ptr<Frame> newKeyframeCandidate = latestTrackedFrame;
 	if(doKFReActivation && SLAMEnabled)
@@ -529,6 +544,8 @@ void SlamSystem::changeKeyframe(bool noCreate, bool force, float maxScore)
 		loadNewCurrentKeyframe(newReferenceKF);
 	else
 	{
+        logd << "else" <<std::endl;
+        LOGD(LSD_TAG, logd);
 		if(force)
 		{
 			if(noCreate)
@@ -869,6 +886,7 @@ void SlamSystem::randomInit(uchar* image, double timeStamp, int id)
 	if(!doMapping)
 		printf("WARNING: mapping is disabled, but we just initialized... THIS WILL NOT WORK! Set doMapping to true.\n");
 
+    current_t = cv::Mat(cv::Matx31d(0,0,0));
 
 	currentKeyFrameMutex.lock();
 
@@ -895,9 +913,16 @@ void SlamSystem::randomInit(uchar* image, double timeStamp, int id)
 
 }
 
+cv::Mat SlamSystem::getCurrentTranslation() {
+    return current_t;
+}
+
 void SlamSystem::trackFrame(uchar* image, unsigned int frameID, bool blockUntilMapped, double timestamp)
 {
 	// Create new frame
+    std::stringstream logd;
+    logd << "trackFrame" << std::endl;
+    LOGD(LSD_TAG, logd);
 	std::shared_ptr<Frame> trackingNewFrame(new Frame(frameID, width, height, K, timestamp, image));
 
 	if(!trackingIsGood)
@@ -928,10 +953,10 @@ void SlamSystem::trackFrame(uchar* image, unsigned int frameID, bool blockUntilM
 
 
 	poseConsistencyMutex.lock_shared();
+    //Zhuo: the keyFrameGraph has all the frames, not just "key" frames....
 	SE3 frameToReference_initialEstimate = se3FromSim3(
 			trackingReferencePose->getCamToWorld().inverse() * keyFrameGraph->allFramePoses.back()->getCamToWorld());
 	poseConsistencyMutex.unlock_shared();
-
 
 
 	std::chrono::high_resolution_clock::time_point tv_start, tv_end;
@@ -942,6 +967,11 @@ void SlamSystem::trackFrame(uchar* image, unsigned int frameID, bool blockUntilM
 			trackingReference,
 			trackingNewFrame.get(),
 			frameToReference_initialEstimate);
+    Sophus::Vector3d t = (se3FromSim3(trackingReferencePose->getCamToWorld()) * newRefToFrame_poseUpdate).translation() * currentKeyFrame->meanIdepth;
+    current_t.at<double>(0,0) = t[0];
+    current_t.at<double>(1,0) = t[1];
+    current_t.at<double>(2,0) = t[2];
+    logd << trackingReferencePose->getCamToWorld().translation() << ", " << newRefToFrame_poseUpdate.translation() << ", " << currentKeyFrame->meanIdepth << std::endl;
 
 
 	// gettimeofday(&tv_end, NULL);
@@ -993,6 +1023,7 @@ void SlamSystem::trackFrame(uchar* image, unsigned int frameID, bool blockUntilM
 		outputWrapper->publishDebugInfo(data);
 	}
 
+    //Zhuo: the addFrame doesn't add it as key frame, only add the pose...
 	keyFrameGraph->addFrame(trackingNewFrame.get());
 
 
@@ -1047,6 +1078,8 @@ void SlamSystem::trackFrame(uchar* image, unsigned int frameID, bool blockUntilM
 		}
 		lock.unlock();
 	}
+    logd << "done" << std::endl;
+    LOGD(LSD_TAG, logd);
 }
 
 

@@ -23,6 +23,18 @@
 #include "tracking/se3_tracker.h"
 #include "io_wrapper/image_display.h"
 
+#include <android/log.h>
+#include <sstream>
+static void LOGD(const char* TAG, const char* MSG) {
+              __android_log_write(ANDROID_LOG_DEBUG, TAG, MSG);
+}
+
+static void LOGD(const char* TAG, const std::stringstream& stream) {
+              std::string streamout = stream.str();
+                                LOGD(TAG, streamout.c_str());
+}
+const char* RELOC_TAG = "NodCV.jni.Reloc";
+
 namespace lsd_slam
 {
 
@@ -88,12 +100,14 @@ void Relocalizer::updateCurrentFrame(std::shared_ptr<Frame> currentFrame)
 	if (displayDepthMap)
 		Util::displayImage( "DebugWindow DEPTH", cv::Mat(currentFrame->height(), currentFrame->width(), CV_32F, currentFrame->image())*(1/255.0f), false );
 
-	int pressedKey = Util::waitKey(1);
-	handleKey(pressedKey);
+	//int pressedKey = Util::waitKey(1);
+	//handleKey(pressedKey);
 }
 void Relocalizer::start(std::vector<Frame*> &allKeyframesList)
 {
-	// make KFForReloc List
+    std::stringstream logd;
+    logd << "reloc.start called! allKeyFrames.size: " << allKeyframesList.size() << std::endl;
+    LOGD(RELOC_TAG, logd);
 
 	KFForReloc.clear();
 	for(unsigned int k=0;k < allKeyframesList.size(); k++)

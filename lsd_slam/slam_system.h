@@ -118,8 +118,10 @@ public:
 	float nAvgTrackFrame, nAvgOptimizationIteration, nAvgFindConstraintsItaration, nAvgFindReferences;
   std::chrono::high_resolution_clock::time_point lastHzUpdate;
 
+    cv::Mat getCurrentTranslation();
 
 private:
+    cv::Mat current_t;
 
 
 	// ============= EXCLUSIVELY TRACKING THREAD (+ init) ===============
